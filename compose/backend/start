@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+
+if [ "${1:-}" = "/sidequest" ]; then
+    shift
+fi
+
+if [ "${1:-}" != "migrate" ]; then
+    /sidequest migrate
+fi
+exec /sidequest "$@"

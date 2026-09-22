@@ -1,0 +1,53 @@
+volumes:
+  sidequest_postgres_data: {}
+  sidequest_pgadmin_data: {}
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: ./compose/backend/Dockerfile
+    image: sidequest_backend
+    container_name: sidequest_backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - ./.envs/.backend
+    ports:
+      - "8000:8000"
+
+  postgres:
+    build:
+      context: .
+      dockerfile: ./compose/postgres/Dockerfile
+    image: sidequest_postgres
+    container_name: sidequest_postgres
+    ports:
+      - 5432:5432
+    volumes:
+      - sidequest_postgres_data:/var/lib/postgresql
+    env_file:
+      - ./.envs/.postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    attach: false
+
+  pgadmin:
+    build:
+      context: .
+      dockerfile: ./compose/pgadmin/Dockerfile
+    image: sidequest_pgadmin
+    container_name: sidequest_pgadmin
+    ports:
+      - 5050:80
+    volumes:
+      - sidequest_pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    env_file:
+      - ./.envs/.pgadmin
+    attach: false
