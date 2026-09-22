@@ -1,0 +1,145 @@
+{{ define "quest-form" }}
+  <form
+    class="ledger-form"
+    action="/quests"
+    method="post"
+    hx-post="/quests"
+    hx-target="#quest-form"
+  >
+    <h3>A new adventure</h3>
+    {{ if .Error }}{{ template "error" . }}{{ end }}<input
+      type="hidden"
+      name="csrf"
+      value="{{ .CSRF }}"
+    /><label for="title">Quest title</label
+    ><input id="title" name="title" value="{{ .Title }}" required maxlength="120" /><label
+      for="description"
+      >Description <small>(optional)</small></label
+    ><textarea id="description" name="description" rows="3" maxlength="4000">
+{{ .Description }}</textarea
+    ><label for="difficulty">Difficulty</label
+    ><select id="difficulty" name="difficulty">
+      {{ range $n := difficulties }}
+        <option value="{{ $n }}" {{ if eq $.Difficulty $n }}selected{{ end }}>{{ $n }} / 5</option>
+      {{ end }}</select
+    ><label for="minutes">Estimated minutes</label
+    ><input
+      id="minutes"
+      name="minutes"
+      type="number"
+      min="1"
+      max="10080"
+      required
+      value="{{ .Estimate }}"
+    />
+    <p class="form-hint">Rewards: 20, 40, 70, 110 or 170 XP, based on difficulty.</p>
+    <button class="btn btn-primary" type="submit">Add to the quest board</button>
+  </form>
+{{ end }}
+{{ define "row" }}
+  <article class="quest-row live-row {{ .Changed.Status }}" id="quest-{{ .Changed.ID }}">
+    <div class="quest-main">
+      <strong>{{ .Changed.Title }}</strong
+      ><span
+        >{{ .Changed.EstimatedMinutes }} min ·
+        <span aria-label="Difficulty {{ .Changed.Difficulty }} of 5"
+          >{{ stars .Changed.Difficulty }}</span
+        >
+        · {{ label .Changed.Status }}</span
+      >{{ if .Changed.Description }}
+        <p class="quest-description">{{ .Changed.Description }}</p>
+      {{ end }}
+    </div>
+    <span class="reward">+{{ .Changed.RewardXP }} XP</span>
+    <div class="quest-actions">
+      {{ if eq .Changed.Status "available" }}
+        {{ template "accept-button" . }}
+      {{ end }}{{ if or (eq .Changed.Status "available") (eq .Changed.Status "active") }}
+        {{ template "complete-button" . }}{{ template "abandon-button" . }}
+      {{ end }}{{ template "delete-button" . }}
+    </div>
+  </article>
+{{ end }}
+{{ define "accept-button" }}
+  <form
+    action="/quests/{{ .Changed.ID }}/accept"
+    method="post"
+    hx-post="/quests/{{ .Changed.ID }}/accept"
+    hx-target="#feedback"
+    hx-swap="none"
+  >
+    <input type="hidden" name="csrf" value="{{ .CSRF }}" /><button
+      class="btn btn-small"
+      type="submit"
+      aria-label="Accept {{ .Changed.Title }}"
+    >
+      Accept
+    </button>
+  </form>
+{{ end }}
+{{ define "complete-button" }}
+  <form
+    action="/quests/{{ .Changed.ID }}/complete"
+    method="post"
+    hx-post="/quests/{{ .Changed.ID }}/complete"
+    hx-target="#feedback"
+    hx-swap="none"
+  >
+    <input type="hidden" name="csrf" value="{{ .CSRF }}" /><button
+      class="btn btn-small"
+      type="submit"
+      aria-label="Complete {{ .Changed.Title }}"
+    >
+      ✓ Complete
+    </button>
+  </form>
+{{ end }}
+{{ define "abandon-button" }}
+  <form
+    action="/quests/{{ .Changed.ID }}/abandon"
+    method="post"
+    hx-post="/quests/{{ .Changed.ID }}/abandon"
+    hx-target="#feedback"
+    hx-swap="none"
+  >
+    <input type="hidden" name="csrf" value="{{ .CSRF }}" /><button
+      class="btn btn-small"
+      type="submit"
+      aria-label="Abandon {{ .Changed.Title }}"
+    >
+      Abandon
+    </button>
+  </form>
+{{ end }}
+{{ define "delete-button" }}
+  <form
+    action="/quests/{{ .Changed.ID }}/delete"
+    method="post"
+    hx-post="/quests/{{ .Changed.ID }}/delete"
+    hx-target="#feedback"
+    hx-swap="none"
+  >
+    <input type="hidden" name="csrf" value="{{ .CSRF }}" /><button
+      class="btn btn-small"
+      type="submit"
+      aria-label="Delete {{ .Changed.Title }}"
+    >
+      Delete
+    </button>
+  </form>
+{{ end }}
+{{ define "mutation" }}
+  {{ if ne .Action "create" }}<div hx-swap-oob="delete:#quest-{{ .Changed.ID }}"></div>{{ end }}
+  {{ if ne .Action "delete" }}
+    <div hx-swap-oob="afterbegin:#list-{{ .Changed.Status }}">{{ template "row" . }}</div>
+  {{ end }}
+  {{ if ne .Action "create" }}
+    {{ template "player" . }}
+    <div id="chosen-quest" class="chosen-slot" aria-live="polite" hx-swap-oob="outerHTML">
+      <p class="empty-state">The ledger has changed. Find your next quest when you are ready.</p>
+    </div>
+  {{ end }}
+  <div id="feedback" role="status" aria-live="polite" hx-swap-oob="outerHTML">
+    <p>{{ .Message }}</p>
+  </div>
+{{ end }}

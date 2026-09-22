@@ -1,0 +1,154 @@
+{{ define "home" }}
+  {{ if .User.IsAdmin }}
+    <aside class="guildmaster-panel" aria-labelledby="guildmaster-title">
+      <div>
+        <p class="section-kicker">Guildmaster's desk</p>
+        <h2 id="guildmaster-title">Gather your party</h2>
+        <p>Create accounts for fellow adventurers and welcome them to the guild.</p>
+      </div>
+      <a class="btn btn-primary" href="/admin/users/new">Create user</a>
+    </aside>
+  {{ end }}
+  <div class="adventure-layout">
+    <aside class="quest-sidebar">
+      <section class="quest-picker" aria-labelledby="picker-title">
+        <p class="section-kicker">Choose your next encounter</p>
+        <h2 id="picker-title">Time for an adventure?</h2>
+        <p class="picker-intro">Set aside a little time. Let the guild find your next quest.</p>
+        <form
+          class="time-picker"
+          action="/quests/pick"
+          method="get"
+          hx-get="/quests/pick"
+          hx-target="#chosen-quest"
+          hx-indicator="#quest-loading"
+        >
+          <label
+            ><input
+              type="radio"
+              name="minutes"
+              value="15"
+              {{ if eq .Minutes 15 }}checked{{ end }}
+            /><span>15 min</span></label
+          ><label
+            ><input
+              type="radio"
+              name="minutes"
+              value="30"
+              {{ if eq .Minutes 30 }}checked{{ end }}
+            /><span>30 min</span></label
+          ><label
+            ><input
+              type="radio"
+              name="minutes"
+              value="60"
+              {{ if eq .Minutes 60 }}checked{{ end }}
+            /><span>1 hour</span></label
+          ><label
+            ><input
+              type="radio"
+              name="minutes"
+              value="0"
+              {{ if eq .Minutes 0 }}checked{{ end }}
+            /><span>Any</span></label
+          ><button class="btn btn-primary" type="submit">⚔ Find me a quest</button>
+        </form>
+        <p id="quest-loading" class="htmx-indicator loading-rune" role="status">
+          Consulting the quest ledger…
+        </p>
+        <div id="chosen-quest" class="chosen-slot" aria-live="polite">{{ template "card" . }}</div>
+      </section>
+    </aside>
+    <section class="quest-board" aria-label="Your quest journal">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Your adventure log</p>
+          <h2>Quest Board</h2>
+        </div>
+        <a class="btn btn-small" href="/quests/new" hx-get="/quests/new" hx-target="#quest-form"
+          >+ New Quest</a
+        >
+      </div>
+      <div id="quest-form"></div>
+      {{ range $status := statuses }}
+        <section
+          class="ledger-section ledger-{{ $status }}"
+          aria-labelledby="heading-{{ $status }}"
+        >
+          <h3 id="heading-{{ $status }}">{{ label $status }}</h3>
+          <div id="list-{{ $status }}" class="quest-list">
+            {{ range $.Quests }}
+              {{ if eq .Status $status }}{{ template "row" (rowData $ .) }}{{ end }}
+            {{ end }}
+            <p class="empty-list">
+              {{ if eq $status "available" }}
+                The noticeboard awaits your first quest. Inscribe a small adventure above.
+              {{ else if eq $status "active" }}
+                No adventures underway. Accept a quest to begin your journey.
+              {{ else if eq $status "completed" }}
+                Your deeds will be remembered here. Complete a quest to earn your first reward.
+              {{ else }}
+                Even heroes change course. Quests you abandon will rest here.
+              {{ end }}
+            </p>
+          </div>
+        </section>
+      {{ end }}
+    </section>
+  </div>
+{{ end }}
+{{ define "card" }}
+  {{ if .Selected }}
+    <article class="featured-quest">
+      <div class="quest-ribbon">Suggested Quest</div>
+      <p class="quest-type">Sidequest · Unclaimed</p>
+      <h3>{{ .Selected.Title }}</h3>
+      <p class="quest-description">{{ .Selected.Description }}</p>
+      <dl class="quest-stats">
+        <div>
+          <dt>Difficulty</dt>
+          <dd aria-label="{{ .Selected.Difficulty }} out of 5">{{ stars .Selected.Difficulty }}</dd>
+        </div>
+        <div>
+          <dt>Time</dt>
+          <dd>{{ .Selected.EstimatedMinutes }} min</dd>
+        </div>
+        <div>
+          <dt>Reward</dt>
+          <dd>+{{ .Selected.RewardXP }} XP</dd>
+        </div>
+      </dl>
+      <div class="quest-actions">
+        <form
+          action="/quests/{{ .Selected.ID }}/accept"
+          method="post"
+          hx-post="/quests/{{ .Selected.ID }}/accept"
+          hx-target="#feedback"
+          hx-swap="none"
+        >
+          <input type="hidden" name="csrf" value="{{ .CSRF }}" /><button
+            class="btn btn-primary"
+            type="submit"
+          >
+            Accept Quest
+          </button>
+        </form>
+        <form action="/quests/pick" method="get" hx-get="/quests/pick" hx-target="#chosen-quest">
+          <input type="hidden" name="minutes" value="{{ .Minutes }}" /><input
+            type="hidden"
+            name="previous"
+            value="{{ .Selected.ID }}"
+          /><button class="btn btn-ghost" type="submit">Reroll</button>
+        </form>
+      </div>
+    </article>
+  {{ else }}
+    <p class="empty-state">
+      {{ if .Message }}
+        {{ .Message }}
+      {{ else }}
+        A small adventure awaits. Choose your time and consult the guildmaster.
+      {{ end }}
+    </p>
+  {{ end }}
+{{ end }}

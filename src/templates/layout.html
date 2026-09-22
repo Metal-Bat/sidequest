@@ -1,0 +1,184 @@
+{{ define "layout" }}
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>Sidequest Guild</title>
+      <meta name="description" content="Turn spare time into small adventures." />
+      <meta
+        name="htmx-config"
+        content='{"allowEval":false,"includeIndicatorStyles":false,"allowNestedOobSwaps":false,"responseHandling":[{"code":"204","swap":false},{"code":"[23]..","swap":true},{"code":"[45]..","swap":true,"error":true}]}'
+      />
+      <link rel="stylesheet" href="/static/sidequest.css" />
+      <script src="/static/vendor/htmx.min.js" defer></script>
+    </head>
+    <body hx-sync="body:queue all">
+      <main class="page-shell">
+        <section class="parchment" aria-labelledby="page-title">
+          <header class="guild-header">
+            <div class="brand-lockup">
+              <div class="guild-crest" aria-hidden="true">
+                <svg viewBox="0 0 100 110" fill="none">
+                  <path d="M50 5 92 30v50L50 105 8 80V30Z" />
+                  <path
+                    d="m50 5 25 64-67-39 17 39 67-39-42-25ZM25 69l25 36 25-36M8 80l17-11m67 11L75 69"
+                  />
+                  <text x="50" y="61" text-anchor="middle">20</text>
+                </svg>
+              </div>
+              <div>
+                <p class="eyebrow">The adventurer’s ledger</p>
+                <h1 id="page-title">Sidequest Guild</h1>
+              </div>
+            </div>
+            <p class="edition-mark">
+              Everyday adventures<br /><span>Character &amp; quest journal</span>
+            </p>
+          </header>
+          {{ if .User.ID }}
+            {{ template "player" . }}
+            <nav class="guild-nav" aria-label="Guild navigation">
+              <a href="/" {{ if eq .Page "home" }}aria-current="page"{{ end }}>Quest Board</a>
+              <a
+                href="/quests/new"
+                {{ if eq .Page "new" }}aria-current="page"{{ end }}
+                >New Quest</a
+              >
+              {{ if .User.IsAdmin }}
+                <a
+                  href="/admin/users/new"
+                  {{ if eq .Page "admin-users" }}aria-current="page"{{ end }}
+                  >Create user</a
+                >
+              {{ end }}
+              <form action="/logout" method="post">
+                <input type="hidden" name="csrf" value="{{ .CSRF }}" /><button type="submit">
+                  Sign out
+                </button>
+              </form>
+            </nav>
+          {{ else }}
+            <p class="welcome-line">Every great campaign begins with one small quest.</p>
+            <div class="ornament" aria-hidden="true"><span></span><b>✦</b><span></span></div>
+          {{ end }}
+          <div id="feedback" role="status" aria-live="polite"></div>
+          {{ if eq .Page "admin-users" }}
+            {{ template "admin-users" . }}
+          {{ else if eq .Page "home" }}
+            {{ template "home" . }}
+          {{ else if eq .Page "new" }}
+            <section class="quest-editor">
+              <p class="section-kicker">A fresh page in your story</p>
+              <h2>Inscribe a new quest</h2>
+              <div id="quest-form">{{ template "quest-form" . }}</div>
+              <p><a href="/">Return to the board</a></p>
+            </section>
+          {{ else if eq .Page "error" }}
+            {{ template "error" . }}<a href="/">Return to the guild</a>
+          {{ else }}
+            {{ template "auth" . }}
+          {{ end }}
+          <footer class="paper-footer">
+            <span>Small deeds. Lasting legends.</span
+            ><span class="footer-rule" aria-hidden="true"></span
+            ><span class="seal" aria-hidden="true">SQ</span>
+          </footer>
+        </section>
+      </main>
+    </body>
+  </html>
+{{ end }}
+
+{{ define "error" }}<p class="form-error" role="alert">{{ .Error }}</p>{{ end }}
+
+{{ define "player" }}
+  <section
+    id="player-xp"
+    class="character-sheet"
+    aria-label="Adventurer summary"
+    {{ if .OOB }}hx-swap-oob="outerHTML"{{ end }}
+  >
+    <div class="character-identity">
+      <span class="sheet-label">Character name</span>
+      <strong class="player-name">{{ .User.Username }}</strong>
+      <span class="role-badge">{{ if .User.IsAdmin }}Guildmaster{{ else }}Adventurer{{ end }}</span>
+    </div>
+    <dl class="character-stats">
+      <div class="stat-box">
+        <dt>Level</dt>
+        <dd>{{ level .User.XP }}</dd>
+      </div>
+      <div class="stat-box">
+        <dt>Total XP</dt>
+        <dd>{{ .User.XP }}</dd>
+      </div>
+    </dl>
+    <div class="xp-wrap">
+      <div class="xp-meta">
+        <span class="sheet-label">Next level</span><strong>{{ progress .User.XP }} / 200 XP</strong>
+      </div>
+      <div
+        class="xp-track"
+        role="progressbar"
+        aria-label="Progress toward next level"
+        aria-valuemin="0"
+        aria-valuemax="200"
+        aria-valuenow="{{ progress .User.XP }}"
+      >
+        <span class="xp-fill" style="width:{{ percent .User.XP }}%"></span>
+      </div>
+      <span class="xp-caption">Earn experience with every completed quest.</span>
+    </div>
+  </section>
+{{ end }}
+
+{{ define "auth" }}
+  <section class="auth-panel">
+    <h2>{{ if eq .Page "register" }}Join the guild{{ else }}Welcome back, adventurer{{ end }}</h2>
+    {{ if .Error }}{{ template "error" . }}{{ end }}
+    <form action="/{{ .Page }}" method="post" class="ledger-form">
+      <input type="hidden" name="csrf" value="{{ .CSRF }}" /><label for="username">Username</label
+      ><input
+        id="username"
+        name="username"
+        value="{{ .Username }}"
+        required
+        minlength="3"
+        maxlength="32"
+        pattern="[a-zA-Z0-9_]{3,32}"
+        autocomplete="username"
+        aria-describedby="username-help"
+      /><small id="username-help">3–32 letters, digits or underscores; case insensitive.</small
+      ><label for="password">Password</label
+      ><input
+        id="password"
+        name="password"
+        type="password"
+        required
+        minlength="10"
+        maxlength="72"
+        autocomplete="{{ if eq .Page "register" }}
+          new-password
+        {{ else }}
+          current-password
+        {{ end }}"
+        aria-describedby="password-help"
+      /><small id="password-help">10–72 bytes. A long, unique passphrase works well.</small
+      ><button class="btn btn-primary" type="submit">
+        {{ if eq .Page "register" }}
+          Join the guild
+        {{ else }}
+          Enter the guild
+        {{ end }}
+      </button>
+    </form>
+    <p>
+      {{ if eq .Page "register" }}
+        Already a member? <a href="/login">Sign in</a>
+      {{ else }}
+        New here? <a href="/register">Join the guild</a>
+      {{ end }}
+    </p>
+  </section>
+{{ end }}

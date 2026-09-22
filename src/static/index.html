@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sidequest Guild</title>
+    <meta name="description" content="Turn spare time into small adventures." />
+    <meta
+      name="htmx-config"
+      content='{"allowEval":false,"includeIndicatorStyles":false,"allowNestedOobSwaps":false,"responseHandling":[{"code":"204","swap":false},{"code":"[23]..","swap":true},{"code":"[45]..","swap":true,"error":true}]}'
+    />
+    <link rel="stylesheet" href="./sidequest.css" />
+  </head>
+  <body hx-sync="body:queue all">
+    <main class="page-shell">
+      <section class="parchment" aria-labelledby="page-title">
+        <header class="guild-header">
+          <div class="brand-lockup">
+            <div class="guild-crest" aria-hidden="true">
+              <svg viewBox="0 0 100 110" fill="none">
+                <path d="M50 5 92 30v50L50 105 8 80V30Z" />
+                <path
+                  d="m50 5 25 64-67-39 17 39 67-39-42-25ZM25 69l25 36 25-36M8 80l17-11m67 11L75 69"
+                />
+                <text x="50" y="61" text-anchor="middle">20</text>
+              </svg>
+            </div>
+            <div>
+              <p class="eyebrow">The adventurer’s ledger</p>
+              <h1 id="page-title">Sidequest Guild</h1>
+            </div>
+          </div>
+          <p class="edition-mark">
+            Everyday adventures<br /><span>Character &amp; quest journal</span>
+          </p>
+        </header>
+
+        <section id="player-xp" class="character-sheet" aria-label="Adventurer summary">
+          <div class="character-identity">
+            <span class="sheet-label">Character name</span>
+            <strong class="player-name">Erfan</strong>
+            <span class="role-badge">Guildmaster</span>
+          </div>
+          <dl class="character-stats">
+            <div class="stat-box">
+              <dt>Level</dt>
+              <dd>7</dd>
+            </div>
+            <div class="stat-box">
+              <dt>Total XP</dt>
+              <dd>1240</dd>
+            </div>
+          </dl>
+          <div class="xp-wrap">
+            <div class="xp-meta">
+              <span class="sheet-label">Next level</span><strong>40 / 200 XP</strong>
+            </div>
+            <div
+              class="xp-track"
+              role="progressbar"
+              aria-label="Progress toward next level"
+              aria-valuemin="0"
+              aria-valuemax="200"
+              aria-valuenow="40"
+            >
+              <span class="xp-fill" style="width: 20%"></span>
+            </div>
+            <span class="xp-caption">Earn experience with every completed quest.</span>
+          </div>
+        </section>
+
+        <nav class="guild-nav" aria-label="Guild navigation">
+          <a href="/" aria-current="page">Quest Board</a>
+          <a href="/quests/new">New Quest</a>
+          <a href="/admin/users/new">Create user</a>
+          <form action="/logout" method="post">
+            <input type="hidden" name="csrf" value="" /><button type="submit">Sign out</button>
+          </form>
+        </nav>
+
+        <div id="feedback" role="status" aria-live="polite"></div>
+
+        <aside class="guildmaster-panel" aria-labelledby="guildmaster-title">
+          <div>
+            <p class="section-kicker">Guildmaster's desk</p>
+            <h2 id="guildmaster-title">Gather your party</h2>
+            <p>Create accounts for fellow adventurers and welcome them to the guild.</p>
+          </div>
+          <a class="btn btn-primary" href="/admin/users/new">Create user</a>
+        </aside>
+        <div class="adventure-layout">
+          <aside class="quest-sidebar">
+            <section class="quest-picker" aria-labelledby="picker-title">
+              <p class="section-kicker">Choose your next encounter</p>
+              <h2 id="picker-title">Time for an adventure?</h2>
+              <p class="picker-intro">
+                Set aside a little time. Let the guild find your next quest.
+              </p>
+              <form
+                class="time-picker"
+                action="/quests/pick"
+                method="get"
+                hx-get="/quests/pick"
+                hx-target="#chosen-quest"
+                hx-indicator="#quest-loading"
+              >
+                <label
+                  ><input type="radio" name="minutes" value="15" checked /><span
+                    >15 min</span
+                  ></label
+                ><label><input type="radio" name="minutes" value="30" /><span>30 min</span></label
+                ><label><input type="radio" name="minutes" value="60" /><span>1 hour</span></label
+                ><label><input type="radio" name="minutes" value="0" /><span>Any</span></label
+                ><button class="btn btn-primary" type="submit">⚔ Find me a quest</button>
+              </form>
+              <p id="quest-loading" class="htmx-indicator loading-rune" role="status">
+                Consulting the quest ledger…
+              </p>
+              <div id="chosen-quest" class="chosen-slot" aria-live="polite">
+                <article class="featured-quest">
+                  <div class="quest-ribbon">Suggested Quest</div>
+                  <p class="quest-type">Sidequest · Unclaimed</p>
+                  <h3>Map the next chapter</h3>
+                  <p class="quest-description">
+                    Take a quiet moment to plan the week ahead. Choose three small things worth
+                    making time for.
+                  </p>
+                  <dl class="quest-stats">
+                    <div>
+                      <dt>Difficulty</dt>
+                      <dd aria-label="2 out of 5">★★☆☆☆</dd>
+                    </div>
+                    <div>
+                      <dt>Time</dt>
+                      <dd>15 min</dd>
+                    </div>
+                    <div>
+                      <dt>Reward</dt>
+                      <dd>+40 XP</dd>
+                    </div>
+                  </dl>
+                  <div class="quest-actions">
+                    <form
+                      action="/quests/1/accept"
+                      method="post"
+                      hx-post="/quests/1/accept"
+                      hx-target="#feedback"
+                      hx-swap="none"
+                    >
+                      <input type="hidden" name="csrf" value="" /><button
+                        class="btn btn-primary"
+                        type="submit"
+                      >
+                        Accept Quest
+                      </button>
+                    </form>
+                    <form
+                      action="/quests/pick"
+                      method="get"
+                      hx-get="/quests/pick"
+                      hx-target="#chosen-quest"
+                    >
+                      <input type="hidden" name="minutes" value="15" /><input
+                        type="hidden"
+                        name="previous"
+                        value="1"
+                      /><button class="btn btn-ghost" type="submit">Reroll</button>
+                    </form>
+                  </div>
+                </article>
+              </div>
+            </section>
+          </aside>
+          <section class="quest-board" aria-label="Your quest journal">
+            <div class="section-heading">
+              <div>
+                <p class="section-kicker">Your adventure log</p>
+                <h2>Quest Board</h2>
+              </div>
+              <a
+                class="btn btn-small"
+                href="/quests/new"
+                hx-get="/quests/new"
+                hx-target="#quest-form"
+                >+ New Quest</a
+              >
+            </div>
+            <div id="quest-form"></div>
+            <section class="ledger-section ledger-available" aria-labelledby="heading-available">
+              <h3 id="heading-available">Unclaimed</h3>
+              <div id="list-available" class="quest-list">
+                <article class="quest-row live-row available" id="quest-1">
+                  <div class="quest-main">
+                    <strong>Map the next chapter</strong
+                    ><span
+                      >15 min · <span aria-label="Difficulty 2 of 5">★★☆☆☆</span> · Unclaimed</span
+                    >
+                    <p class="quest-description">
+                      Take a quiet moment to plan the week ahead. Choose three small things worth
+                      making time for.
+                    </p>
+                  </div>
+                  <span class="reward">+40 XP</span>
+                  <div class="quest-actions">
+                    <form
+                      action="/quests/1/accept"
+                      method="post"
+                      hx-post="/quests/1/accept"
+                      hx-target="#feedback"
+                      hx-swap="none"
+                    >
+                      <input type="hidden" name="csrf" value="" /><button
+                        class="btn btn-small"
+                        type="submit"
+                        aria-label="Accept Map the next chapter"
+                      >
+                        Accept
+                      </button>
+                    </form>
+                    <form
+                      action="/quests/1/complete"
+                      method="post"
+                      hx-post="/quests/1/complete"
+                      hx-target="#feedback"
+                      hx-swap="none"
+                    >
+                      <input type="hidden" name="csrf" value="" /><button
+                        class="btn btn-small"
+                        type="submit"
+                        aria-label="Complete Map the next chapter"
+                      >
+                        ✓ Complete
+                      </button>
+                    </form>
+                    <form
+                      action="/quests/1/abandon"
+                      method="post"
+                      hx-post="/quests/1/abandon"
+                      hx-target="#feedback"
+                      hx-swap="none"
+                    >
+                      <input type="hidden" name="csrf" value="" /><button
+                        class="btn btn-small"
+                        type="submit"
+                        aria-label="Abandon Map the next chapter"
+                      >
+                        Abandon
+                      </button>
+                    </form>
+                    <form
+                      action="/quests/1/delete"
+                      method="post"
+                      hx-post="/quests/1/delete"
+                      hx-target="#feedback"
+                      hx-swap="none"
+                    >
+                      <input type="hidden" name="csrf" value="" /><button
+                        class="btn btn-small"
+                        type="submit"
+                        aria-label="Delete Map the next chapter"
+                      >
+                        Delete
+                      </button>
+                    </form>
+                  </div>
+                </article>
+                <article class="quest-row live-row available" id="quest-2">
+                  <div class="quest-main">
+                    <strong>A walk beyond the familiar</strong
+                    ><span
+                      >30 min · <span aria-label="Difficulty 1 of 5">★☆☆☆☆</span> · Unclaimed</span
+                    >
+                    <p class="quest-description">
+                      Leave your usual path and discover a new corner of the neighborhood.
+                    </p>
+                  </div>
+                  <span class="reward">+20 XP</span>
+                  <div class="quest-actions">
+                    <form
+                      action="/quests/2/accept"
+                      method="post"
+                      hx-post="/quests/2/accept"
+                      hx-target="#feedback"
+                      hx-swap="none"
+                    >
+                      <input type="hidden" name="csrf" value="" /><button
+                        class="btn btn-small"
+                        type="submit"
+                        aria-label="Accept A walk beyond the familiar"
+                      >
+                        Accept
+                      </button>
+                    </form>
+                    <form
+                      action="/quests/2/complete"
+                      method="post"
+                      hx-post="/quests/2/complete"
+                      hx-target="#feedback"
+                      hx-swap="none"
+                    >
+                      <input type="hidden" name="csrf" value="" /><button
+                        class="btn btn-small"
+                        type="submit"
+                        aria-label="Complete A walk beyond the familiar"
+                      >
+                        ✓ Complete
+                      </button>
+                    </form>
+                    <form
+                      action="/quests/2/abandon"
+                      method="post"
+                      hx-post="/quests/2/abandon"
+                      hx-target="#feedback"
+                      hx-swap="none"
+                    >
+                      <input type="hidden" name="csrf" value="" /><button
+                        class="btn btn-small"
+                        type="submit"
+                        aria-label="Abandon A walk beyond the familiar"
+                      >
+                        Abandon
+                      </button>
+                    </form>
+                    <form
+                      action="/quests/2/delete"
+                      method="post"
+                      hx-post="/quests/2/delete"
+                      hx-target="#feedback"
+                      hx-swap="none"
+                    >
+                      <input type="hidden" name="csrf" value="" /><button
+                        class="btn btn-small"
+                        type="submit"
+                        aria-label="Delete A walk beyond the familiar"
+                      >
+                        Delete
+                      </button>
+                    </form>
+                  </div>
+                </article>
+                <p class="empty-list">
+                  The noticeboard awaits your first quest. Inscribe a small adventure above.
+                </p>
+              </div>
+            </section>
+            <section class="ledger-section ledger-active" aria-labelledby="heading-active">
+              <h3 id="heading-active">Accepted</h3>
+              <div id="list-active" class="quest-list">
+                <article class="quest-row live-row active" id="quest-3">
+                  <div class="quest-main">
+                    <strong>Tame the reading pile</strong
+                    ><span
+                      >30 min · <span aria-label="Difficulty 3 of 5">★★★☆☆</span> · Accepted</span
+                    >
+                  </div>
+                  <span class="reward">+70 XP</span>
+                  <div class="quest-actions">
+                    <form
+                      action="/quests/3/complete"
+                      method="post"
+                      hx-post="/quests/3/complete"
+                      hx-target="#feedback"
+                      hx-swap="none"
+                    >
+                      <input type="hidden" name="csrf" value="" /><button
+                        class="btn btn-small"
+                        type="submit"
+                        aria-label="Complete Tame the reading pile"
+                      >
+                        ✓ Complete
+                      </button>
+                    </form>
+                    <form
+                      action="/quests/3/abandon"
+                      method="post"
+                      hx-post="/quests/3/abandon"
+                      hx-target="#feedback"
+                      hx-swap="none"
+                    >
+                      <input type="hidden" name="csrf" value="" /><button
+                        class="btn btn-small"
+                        type="submit"
+                        aria-label="Abandon Tame the reading pile"
+                      >
+                        Abandon
+                      </button>
+                    </form>
+                    <form
+                      action="/quests/3/delete"
+                      method="post"
+                      hx-post="/quests/3/delete"
+                      hx-target="#feedback"
+                      hx-swap="none"
+                    >
+                      <input type="hidden" name="csrf" value="" /><button
+                        class="btn btn-small"
+                        type="submit"
+                        aria-label="Delete Tame the reading pile"
+                      >
+                        Delete
+                      </button>
+                    </form>
+                  </div>
+                </article>
+                <p class="empty-list">
+                  No adventures underway. Accept a quest to begin your journey.
+                </p>
+              </div>
+            </section>
+            <section class="ledger-section ledger-completed" aria-labelledby="heading-completed">
+              <h3 id="heading-completed">Completed</h3>
+              <div id="list-completed" class="quest-list">
+                <article class="quest-row live-row completed" id="quest-4">
+                  <div class="quest-main">
+                    <strong>Restore order to the workspace</strong
+                    ><span
+                      >15 min · <span aria-label="Difficulty 2 of 5">★★☆☆☆</span> · Completed</span
+                    >
+                  </div>
+                  <span class="reward">+40 XP</span>
+                  <div class="quest-actions">
+                    <form
+                      action="/quests/4/delete"
+                      method="post"
+                      hx-post="/quests/4/delete"
+                      hx-target="#feedback"
+                      hx-swap="none"
+                    >
+                      <input type="hidden" name="csrf" value="" /><button
+                        class="btn btn-small"
+                        type="submit"
+                        aria-label="Delete Restore order to the workspace"
+                      >
+                        Delete
+                      </button>
+                    </form>
+                  </div>
+                </article>
+                <p class="empty-list">
+                  Your deeds will be remembered here. Complete a quest to earn your first reward.
+                </p>
+              </div>
+            </section>
+            <section class="ledger-section ledger-abandoned" aria-labelledby="heading-abandoned">
+              <h3 id="heading-abandoned">Abandoned</h3>
+              <div id="list-abandoned" class="quest-list">
+                <p class="empty-list">
+                  Even heroes change course. Quests you abandon will rest here.
+                </p>
+              </div>
+            </section>
+          </section>
+        </div>
+
+        <footer class="paper-footer">
+          <span>Small deeds. Lasting legends.</span
+          ><span class="footer-rule" aria-hidden="true"></span
+          ><span class="seal" aria-hidden="true">SQ</span>
+        </footer>
+      </section>
+    </main>
+  </body>
+</html>
