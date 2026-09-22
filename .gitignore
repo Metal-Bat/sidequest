@@ -30,3 +30,13 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Private local configuration and generated output
+.envs/*
+!.envs/*.example
+/bin/
+/src/sidequest
+/src/tmp/
+/.coverage/
+
+node_modules/
