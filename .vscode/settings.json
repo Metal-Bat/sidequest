@@ -1,0 +1,31 @@
+{
+    "cSpell.words": [
+        "buildvcs",
+        "Cinzel",
+        "covermode",
+        "coverprofile",
+        "gofmt",
+        "golangci",
+        "gotestsum",
+        "guildmaster",
+        "HSTS",
+        "htmx",
+        "isready",
+        "jackc",
+        "junitfile",
+        "modcache",
+        "nosniff",
+        "pgadmin",
+        "pgconn",
+        "pgxpool",
+        "pkgname",
+        "Reswap",
+        "Retarget",
+        "sidequest",
+        "sslmode",
+        "testcache",
+        "testname",
+        "TIMESTAMPTZ",
+        "xact"
+    ]
+}

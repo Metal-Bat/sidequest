@@ -1,0 +1,126 @@
+[env]
+_.file = ".envs/.local"
+
+[tools]
+node = "26.1.0"
+go = "1.27.1"
+pre-commit = "4.6.2"
+golangci-lint = "2.13.2"
+gotestsum = "1.13.0"
+rtk = "0.45.0"
+
+[tasks.fmt]
+depends = ["ui-format"]
+description = "Format project"
+dir = "src"
+run = ["gofmt -w .", "go mod tidy"]
+
+[tasks.fix]
+depends = ["ui-fix"]
+description = "Auto fix lint issues"
+dir = "src"
+run = ["golangci-lint run --fix ./..."]
+
+[tasks.lint]
+depends = ["ui-lint"]
+description = "Run linters"
+dir = "src"
+run = ["golangci-lint run ./..."]
+
+[tasks.vet]
+description = "Run go vet"
+dir = "src"
+run = ["go vet ./..."]
+
+[tasks.build]
+description = "Build project"
+dir = "src"
+run = ["go build -buildvcs=false ./..."]
+
+[tasks.test]
+description = "Run tests"
+dir = "src"
+run = ["gotestsum --format=pkgname -- -count=1 ./..."]
+
+[tasks.test-race]
+description = "Run race tests"
+dir = "src"
+run = ["gotestsum --format=pkgname -- -race -count=1 ./..."]
+
+[tasks.coverage]
+description = "Generate HTML coverage"
+dir = "src"
+run = [
+    "mkdir -p ../.coverage",
+    "gotestsum --format=testname --junitfile=../.coverage/junit.xml -- -covermode=atomic -coverprofile=../.coverage/coverage.out ./...",
+    "go tool cover -html=../.coverage/coverage.out -o ../.coverage/coverage.html",
+]
+
+[tasks.clean]
+description = "Clean caches"
+dir = "src"
+run = ["go clean -cache -testcache -modcache", "rm -rf ../.coverage"]
+
+[tasks.check]
+description = "Checks"
+depends = ["fmt", "vet", "lint", "test"]
+
+[tasks.complete-check]
+description = "Complete Checks"
+depends = ["fmt", "vet", "lint", "test-race", "coverage"]
+
+[tasks.deps]
+description = "Update dependencies"
+dir = "src"
+run = ["go get -u ./...", "go mod tidy"]
+
+[tasks.bench]
+description = "Run benchmarks"
+dir = "src"
+run = ["go test -bench=. ./..."]
+
+[tasks.dev]
+description = "Run Sidequest natively using .envs/.local"
+dir = "src"
+run = "go run ."
+
+[tasks.migrate]
+description = "Apply embedded database migrations"
+dir = "src"
+run = "go run . migrate"
+
+[tasks.test-integration]
+description = "Run all tests including database isolation and concurrency (requires TEST_DATABASE_URL)"
+dir = "src"
+run = "test -n \"$TEST_DATABASE_URL\" && go test -race -count=1 ./..."
+
+[tasks.release]
+description = "Build the standalone production binary"
+dir = "src"
+run = "go build -trimpath -ldflags='-s -w' -o ../bin/sidequest ."
+
+[tasks.create-admin]
+raw = true
+description = "Interactively create an administrator who can create users"
+dir = "src"
+run = "go run . create-admin"
+
+[tasks.ui-install]
+shell = "bash -c"
+description = "Install pinned HTML and CSS tools"
+run = 'PATH="$(dirname "$(mise which node)"):$PATH" npm ci'
+
+[tasks.ui-format]
+shell = "bash -c"
+description = "Format HTML templates and CSS"
+run = 'PATH="$(dirname "$(mise which node)"):$PATH" npm run format'
+
+[tasks.ui-fix]
+shell = "bash -c"
+description = "Fix CSS lint issues and format HTML/CSS"
+run = 'PATH="$(dirname "$(mise which node)"):$PATH" npm run fix'
+
+[tasks.ui-lint]
+shell = "bash -c"
+description = "Check HTML, CSS, and formatting"
+run = 'PATH="$(dirname "$(mise which node)"):$PATH" npm run lint'
