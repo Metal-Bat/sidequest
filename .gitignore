@@ -37,6 +37,7 @@ go.work.sum
 /bin/
 /src/sidequest
 /src/tmp/
+/publish/
 /.coverage/
 
 node_modules/
